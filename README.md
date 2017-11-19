@@ -19,7 +19,10 @@ If you don't want to get notifications from our [public group](https://vk.com/ma
   - If you want to run this script in infinite loop, set `SINGLE_RUN` to `False`
 
 ## TODO:
-- Add [matmech website](http://www.math.spbu.ru/rus/) to check list
+- Add [matmech website](http://www.math.spbu.ru/rus/) to check list (**DONE**)
 - Modify this bot, so that one doesn't have to set all paremeters by hand.
 - Add some other stuff (timetable, trains, e.t.c.)
   - duno how, for now
+- In parsing of notifications from website, add filter for irrelevant news (like, not for our group)
+  - Add named entity recognition
+- Move to server (mb [here](https://wiki.python.org/moin/FreeHosts))
