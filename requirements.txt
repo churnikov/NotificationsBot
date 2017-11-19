@@ -4,8 +4,10 @@ certifi==2017.11.5
 chardet==3.0.4
 enum-compat==0.0.2
 eventlet==0.21.0
+feedparser==5.2.1
 greenlet==0.4.12
 idna==2.6
+lxml==4.1.1
 pyTelegramBotAPI==3.4.2
 requests==2.18.4
 six==1.11.0
