@@ -1,5 +1,9 @@
 import time
 import logging
+import json
+import pickle
+from os.path import exists
+from os import mkdir
 from hashlib import blake2b
 from time import sleep
 
@@ -34,6 +38,45 @@ DATABASE = 'news.sqlite'
 SINGLE_RUN = False
 
 bot = telebot.TeleBot(TELE_TOKEN)
+
+
+class text_worker:
+    def __init__(self, json_name, clf_news_file, clf_target_file,
+                 text_transformer_file):
+        self.json_name = json_name
+        self.clf_news_file = clf_news_file
+        self.clf_target_file = clf_target_file
+        self.text_transformer_file = text_transformer_file
+
+
+    def get_target_group()
+
+
+    def write_text_to_json(self, key, target_level, target_news, text):
+        """
+        Write text data to json
+        :key:          -- unique key of text
+        :target_level: -- label of target students
+        :target_news:  -- label of target news
+        :text:         -- list of strings
+        :json_name:    -- name of json file to save.
+                          if not exists in folder 'data', will create one
+        """
+        if not exists('data/'):
+            mkdir('data/')
+
+        with open('data/'+self.json_name, 'r') as f:
+            data_json = json.load(f)
+
+        data_json['text'].update({key : text})
+        data_json['target_level'].update({key : target_level})
+        data_json['target_news'].update({key : target_news})
+
+        with open('data/'+self.json_name, 'w') as f:
+            json.dump(data_json, f)
+
+
+
 
 
 def get_vk_url(domain, token, count=5):
@@ -86,7 +129,7 @@ def get_data_web(website, limit=5):
                 if item.name == 'hr':
                     break
                 news.append(item.text)
-            key = '\n'.join(news)
+            key = get_string_hash('\n'.join(news))
             # Setting limit for news to return
             content[key] = news
             if len(content) > limit:
@@ -167,7 +210,7 @@ if __name__ == '__main__':
             check_new_posts_vk()
             check_new_posts_web()
             logging.info('[App] Script went to sleep.\n')
-            time.sleep(60 * 30)
+            time.sleep(60 * 10)
     else:
         check_new_posts_vk()
     logging.info('[App] Script exited.\n')
