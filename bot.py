@@ -41,6 +41,8 @@ bot = telebot.TeleBot(TELE_TOKEN)
 
 
 class text_worker:
+
+
     def __init__(self, json_name, clf_news_file, clf_target_file,
                  text_transformer_file):
         self.json_name = json_name
@@ -48,18 +50,44 @@ class text_worker:
         self.clf_target_file = clf_target_file
         self.text_transformer_file = text_transformer_file
 
+        self.clf_news = None
+        self.clf_target = None
+        self.__text_transformer = None
 
-    def get_target_group()
+
+    def get_transformer(self):
+        if self.__text_transformer is None:
+            with open('models/'+self.text_transformer_file, 'rb') as f:
+                self.__text_transformer = pickle.load(f)
+        return self.__text_transformer
+
+
+    def get_target_group(self, text):
+        """text should be string"""
+        if self.clf_target is None:
+            with open('models/'+self.clf_target_file, 'rb') as f:
+                self.clf_target = pickle.load(f)
+        X = self.get_transformer().transform(text)
+        return self.clf_target.predict(X)
+
+
+    def get_news_group(self, text):
+        """text should be string"""
+        if self.clf_news is None:
+            with open('models/'+self.clf_news_file, 'rb') as f:
+                self.clf_news = pickle.load(f)
+        X = self.get_transformer().transform(text)
+        return self.clf_news.predict(X)
 
 
     def write_text_to_json(self, key, target_level, target_news, text):
         """
         Write text data to json
-        :key:          -- unique key of text
-        :target_level: -- label of target students
-        :target_news:  -- label of target news
-        :text:         -- list of strings
-        :json_name:    -- name of json file to save.
+        :key:          (str )-- unique key of text
+        :target_level:       -- label of target students
+        :target_news:        -- label of target news
+        :text:               -- list of strings
+        :json_name:          -- name of json file to save.
                           if not exists in folder 'data', will create one
         """
         if not exists('data/'):
@@ -76,7 +104,10 @@ class text_worker:
             json.dump(data_json, f)
 
 
-
+text_worker = text_worker(json_name='new_data.json',
+                          clf_news_file='news_classifier.pickle',
+                          clf_target_file='level_classifier.pickle',
+                          text_transformer_file='doc2numbers.pickle')
 
 
 def get_vk_url(domain, token, count=5):
@@ -184,6 +215,7 @@ def check_new_posts_vk():
             logging.error('Exception of type {!s} in check_new_posts_vk(): {!s}'.format(type(ex).__name__,
                                                                                         str(ex)))
         logging.info('[VK] Finished scanning {}'.format(pub))
+
 
 def check_new_posts_web():
     for sourse_site in WEBSITES:
