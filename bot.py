@@ -44,11 +44,14 @@ class text_worker:
 
 
     def __init__(self, json_name, clf_news_file, clf_target_file,
-                 text_transformer_file):
+                 text_transformer_file, description_target_file,
+                 description_news_file):
         self.json_name = json_name
         self.clf_news_file = clf_news_file
         self.clf_target_file = clf_target_file
         self.text_transformer_file = text_transformer_file
+        self.description_news_file = description_news_file
+        self.description_target_file = description_target_file
 
         self.clf_news = None
         self.clf_target = None
@@ -62,22 +65,40 @@ class text_worker:
         return self.__text_transformer
 
 
-    def get_target_group(self, text):
+    def get_news_describer(self):
+        with open('models/'+self.description_news_file, 'rb') as f:
+            return json.load(f)
+
+
+    def get_target_describer(self):
+        with open('models/'+self.description_target_file, 'rb') as f:
+            return json.load(f)
+
+
+    def get_target_group(self, text, described=True):
         """text should be string"""
         if self.clf_target is None:
             with open('models/'+self.clf_target_file, 'rb') as f:
                 self.clf_target = pickle.load(f)
         X = self.get_transformer().transform(text)
-        return self.clf_target.predict(X)
+        raw_target = self.clf_target.predict(X)
+        if described:
+            return self.get_target_describer()[str(raw_target[0])]
+        else:
+            return raw_target
 
 
-    def get_news_group(self, text):
+    def get_news_group(self, text, described=True):
         """text should be string"""
         if self.clf_news is None:
             with open('models/'+self.clf_news_file, 'rb') as f:
                 self.clf_news = pickle.load(f)
         X = self.get_transformer().transform(text)
-        return self.clf_news.predict(X)
+        raw_news = self.clf_news.predict(X)
+        if described:
+            return self.get_news_describer()[str(raw_news[0])]
+        else:
+            return raw_news
 
 
     def write_text_to_json(self, key, target_level, target_news, text):
@@ -107,7 +128,9 @@ class text_worker:
 text_worker = text_worker(json_name='new_data.json',
                           clf_news_file='news_classifier.pickle',
                           clf_target_file='level_classifier.pickle',
-                          text_transformer_file='doc2numbers.pickle')
+                          text_transformer_file='doc2numbers.pickle',
+                          description_news_file='news_groups_described.json',
+                          description_target_file='target_groups_described.json')
 
 
 def get_vk_url(domain, token, count=5):
@@ -142,7 +165,9 @@ def get_data_web(website, limit=5):
         content = req.content
         soup = BeautifulSoup(content, 'lxml')
 
-        content = dict()
+        content = {'text': dict(),
+                   'target_level' : dict(),
+                   'target_news' : dict()}
 
         first_post = soup.find('div', {'class' : 'content clearfix'})
         news = []
@@ -152,7 +177,9 @@ def get_data_web(website, limit=5):
             news.append(hr.text)
 
         key = get_string_hash('\n'.join(news))
-        content[key] = news
+        content['text'][key] = news
+        content['target_level'][key] = text_worker.get_target_group(['\n'.join(news)])
+        content['target_news'][key] = text_worker.get_news_group(['\n'.join(news)])
 
         for hr in soup.findAll('hr'):
             news = []
@@ -162,8 +189,10 @@ def get_data_web(website, limit=5):
                 news.append(item.text)
             key = get_string_hash('\n'.join(news))
             # Setting limit for news to return
-            content[key] = news
-            if len(content) > limit:
+            content['text'][key] = news
+            content['target_level'][key] = text_worker.get_target_group(['\n'.join(news)])
+            content['target_news'][key] = text_worker.get_news_group(['\n'.join(news)])
+            if len(content['text']) > limit:
                 break
         return content
     else:
@@ -188,9 +217,15 @@ def send_new_posts_from_vk(items, public):
 def send_new_posts_from_web(items, sourse_site):
     db = SQLighter(DATABASE)
     last_id = None
-    for key, item in items.items():
+    for key, item in items['text'].items():
         if db.add_event((key, SOURCES[sourse_site])):
-            bot.send_message(CHANNEL_NAME, '\n'.join(item))
+            body = '\n'.join(item)
+            target_group = items['target_level'][key]
+            target_news = items['target_news'][key]
+
+            text = '{} {}\n {}'.format(target_group, target_news, body)
+
+            bot.send_message(CHANNEL_NAME, text)
         else:
             logging.info('New last_id (website) in public {!s} is {!s}'.format(sourse_site, key))
             break
