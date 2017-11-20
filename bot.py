@@ -114,6 +114,15 @@ class text_worker:
         if not exists('data/'):
             mkdir('data/')
 
+        if not exists('data/'+self.json_name):
+            with open('data/'+self.json_name, 'w') as f:
+                data_json = dict()
+                data_json['text'] = dict()
+                data_json['target_level'] = dict()
+                data_json['target_news'] = dict()
+                json.dump(data_json, f)
+
+
         with open('data/'+self.json_name, 'r') as f:
             data_json = json.load(f)
 
@@ -200,13 +209,33 @@ def get_data_web(website, limit=5):
         return None
 
 
+def get_hashtag_from_mmspbu(string):
+    """return hashtags from mmspbu, if there are any in post"""
+    tags = []
+    for pending_tag in string.split('|')[1:]:
+        if '#' in pending_tag:
+            tag = pending_tag.strip().replace('@', '_')
+            tags.append(tag)
+    return tags
+
+
 def send_new_posts_from_vk(items, public):
     db = SQLighter(DATABASE)
     last_id = None
     for item in items:
         if db.add_event((str(item['id']), SOURCES[public])):
             link = '{!s}{!s}'.format(LINKS[public], item['id'])
+
+            if public == 'mmspbu':
+                tags = get_hashtag_from_mmspbu(item['text'])
+                if tags:
+                    tags_string = ' '.join(tags)
+                    link = '{}\n{}'.format(tags_string, link)
             bot.send_message(CHANNEL_NAME, link)
+            text_worker.write_text_to_json(str(item['id']) + '_' + str(SOURCES[public]),
+                                           target_level=text_worker.get_target_group([item['text']]),
+                                           target_news=text_worker.get_news_group([item['text']]),
+                                           text=item['text'])
         else:
             logging.info('New last_id (VK) in public {} is {!s}'.format(public, item['id']))
             break
@@ -226,6 +255,10 @@ def send_new_posts_from_web(items, sourse_site):
             text = '{} {}\n {}'.format(target_group, target_news, body)
 
             bot.send_message(CHANNEL_NAME, text)
+            text_worker.write_text_to_json(key,
+                                           target_level=target_group,
+                                           target_news=target_news,
+                                           text=body)
         else:
             logging.info('New last_id (website) in public {!s} is {!s}'.format(sourse_site, key))
             break
