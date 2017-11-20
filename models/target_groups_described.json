@@ -1,11 +1,11 @@
 {
-  "1.0":"#first_course_mmspbu",
-  "2.0":"#second_course_mmspbu",
-  "3.0":"#third_course_mmspbu",
-  "4.0":"#fourth_course_mmspbu",
-  "5.0":"#master_first_course_mmspbu",
-  "6.0":"#master_second_course_mmspbu",
-  "7.0":"#phd_mmspbu",
-  "8.0":"#everyone_mmspbu",
-  "9.0":"#graduates_mmspbu"
+  "1":"#первый_курс_mmspbu",
+  "2":"#второй_курс_mmspbu",
+  "3":"#третий_курс_mmspbu",
+  "4":"#четвертый_курс_mmspbu",
+  "5":"#магистратура_первый_курс_mmspbu",
+  "6":"#магистратура_второй_курс_mmspbu",
+  "7":"#phd_mmspbu",
+  "8":"#для_всех_mmspbu",
+  "9":"#выпускники_mmspbu"
 }
