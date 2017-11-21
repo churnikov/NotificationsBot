@@ -153,3 +153,4 @@ credentials.*
 *.toc
 *.bbl
 config.py
+data_analysis
