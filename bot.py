@@ -4,7 +4,7 @@ import json
 import pickle
 from os.path import exists
 from os import mkdir
-from hashlib import blake2b
+from hashlib import sha512
 from time import sleep
 
 import telebot
@@ -127,11 +127,11 @@ class text_worker:
             data_json = json.load(f)
 
         data_json['text'].update({key : text})
-        data_json['target_level'].update({key : target_level})
-        data_json['target_news'].update({key : target_news})
+        data_json['target_level'].update({key : str(target_level)})
+        data_json['target_news'].update({key : str(target_news)})
 
         with open('data/'+self.json_name, 'w') as f:
-            json.dump(data_json, f)
+            json.dump(data_json, f, ensure_ascii=False)
 
 
 text_worker = text_worker(json_name='new_data.json',
@@ -157,9 +157,8 @@ def get_vk_url(domain, token, count=5):
 
 def get_string_hash(string):
     """Encode `string` as a hash by blake2b algorithm"""
-    h = blake2b(key=b'4242', digest_size=10)
-    h.update(str.encode(string))
-    return h.hexdigest()
+    h = sha512(str.encode(string)).hexdigest()
+    return h
 
 
 def get_data_vk(domain, token):
@@ -235,7 +234,7 @@ def get_data_web(website, content_extractor, limit=5):
         content = req.content
         soup = BeautifulSoup(content, 'lxml')
 
-        content = content_extractor(soup, content_extractor)
+        content = content_extractor(soup, limit)
 
         return content
     else:
@@ -268,9 +267,9 @@ def send_new_posts_from_vk(items, public):
             bot.send_message(CHANNEL_NAME, link)
             text_worker.write_text_to_json(str(item['id']) + '_' + str(SOURCES[public]),
                                            target_level=text_worker.get_target_group([item['text']],
-                                                                                     described=False),
+                                                                                     described=False)[0],
                                            target_news=text_worker.get_news_group([item['text']],
-                                                                                  described=False),
+                                                                                  described=False)[0],
                                            text=item['text'])
         else:
             logging.info('New last_id (VK) in public {} is {!s}'.format(public, item['id']))
@@ -292,11 +291,11 @@ def send_new_posts_from_web(items, sourse_site):
 
             bot.send_message(CHANNEL_NAME, text)
             text_worker.write_text_to_json(key,
-                                           target_level=text_worker.get_target_group([body]
-                                                                                     described=False),
+                                           target_level=text_worker.get_target_group([body],
+                                                                                     described=False)[0],
                                            target_news=text_worker.get_news_group([body],
-                                                                                  described=False),
-                                           text=body)
+                                                                                  described=False)[0],
+                                           text=[body])
         else:
             logging.info('New last_id (website) in public {!s} is {!s}'.format(sourse_site, key))
             break
