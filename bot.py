@@ -143,18 +143,33 @@ text_worker = text_worker(json_name='new_data.json',
 
 
 def get_vk_url(domain, token, count=5):
+    """
+    generates vk api request.
+    :domain: -- (str) -- name of public in url (ex: vk.com/mmspbu)
+    :token:  -- (str) -- vk api token.
+
+    :return: -- (str) -- url with request.
+    """
     return 'https://api.vk.com/method/wall.get?domain={}&count={}&filter=owner&access_token={}'.format(domain,
                                                                                                 count,
                                                                                                 token)
 
 
 def get_string_hash(string):
+    """Encode `string` as a hash by blake2b algorithm"""
     h = blake2b(key=b'4242', digest_size=10)
     h.update(str.encode(string))
     return h.hexdigest()
 
 
 def get_data_vk(domain, token):
+    """
+    Get relevant data from vk group.
+    :domain: -- (str) -- name of group.
+    :toke:   -- (str) -- vk api token
+
+    returns json object if everything ok, else, return None
+    """
     vk_url = get_vk_url(domain, token)
     timeout = eventlet.Timeout(10)
     try:
@@ -167,42 +182,61 @@ def get_data_vk(domain, token):
         timeout.cancel()
 
 
-def get_data_web(website, limit=5):
+def parse_mm_notifications_page(soup, limit):
+    """
+    Gets BeautifulSoup object as an argument
+    :soup:    -- (BeautifulSoup obj) -- preprocessed page with BeautifulSoup
+    :limit:   -- (int)               -- number of news to returns
+
+    :returns: -- (dict)              -- dict with keys \{text, target_news, target_level\}
+                                        and values -- another dict with keys -- unique
+                                        number of news in database.
+    """
+    content = {'text': dict(),
+               'target_level' : dict(),
+               'target_news' : dict()}
+
+#   Shitty webpage, shitty code. This page has a wierd layout, so that we have, what we have :c
+#   Find first entry befire first <hr>
+    first_post = soup.find('div', {'class' : 'content clearfix'})
+    news = []
+    for hr in first_post.findChildren():
+        if hr.name == 'hr':
+            break
+        news.append(hr.text)
+#   Saving data
+    key = get_string_hash('\n'.join(news))
+    content['text'][key] = news
+    content['target_level'][key] = text_worker.get_target_group(['\n'.join(news)])
+    content['target_news'][key] = text_worker.get_news_group(['\n'.join(news)])
+
+#   Find all next entries, if there are any
+    for hr in soup.findAll('hr'):
+        news = []
+        for item in hr.find_next_siblings():
+            if item.name == 'hr':
+                break
+            news.append(item.text)
+#       Saving data
+        key = get_string_hash('\n'.join(news))
+        content['text'][key] = news
+        content['target_level'][key] = text_worker.get_target_group(['\n'.join(news)])
+        content['target_news'][key] = text_worker.get_news_group(['\n'.join(news)])
+#       Setting limit for news to return
+        if len(content['text']) > limit:
+            break
+    return content
+
+
+def get_data_web(website, content_extractor, limit=5):
     req = requests.get(website)
     if req.status_code == 200:
         logging.info('MatMech website is working, begining to parse')
         content = req.content
         soup = BeautifulSoup(content, 'lxml')
 
-        content = {'text': dict(),
-                   'target_level' : dict(),
-                   'target_news' : dict()}
+        content = content_extractor(soup, content_extractor)
 
-        first_post = soup.find('div', {'class' : 'content clearfix'})
-        news = []
-        for hr in first_post.findChildren():
-            if hr.name == 'hr':
-                break
-            news.append(hr.text)
-
-        key = get_string_hash('\n'.join(news))
-        content['text'][key] = news
-        content['target_level'][key] = text_worker.get_target_group(['\n'.join(news)])
-        content['target_news'][key] = text_worker.get_news_group(['\n'.join(news)])
-
-        for hr in soup.findAll('hr'):
-            news = []
-            for item in hr.find_next_siblings():
-                if item.name == 'hr':
-                    break
-                news.append(item.text)
-            key = get_string_hash('\n'.join(news))
-            # Setting limit for news to return
-            content['text'][key] = news
-            content['target_level'][key] = text_worker.get_target_group(['\n'.join(news)])
-            content['target_news'][key] = text_worker.get_news_group(['\n'.join(news)])
-            if len(content['text']) > limit:
-                break
         return content
     else:
         logging.warning('Could not reach {}'.format(website))
@@ -233,8 +267,10 @@ def send_new_posts_from_vk(items, public):
                     link = '{}\n{}'.format(tags_string, link)
             bot.send_message(CHANNEL_NAME, link)
             text_worker.write_text_to_json(str(item['id']) + '_' + str(SOURCES[public]),
-                                           target_level=text_worker.get_target_group([item['text']]),
-                                           target_news=text_worker.get_news_group([item['text']]),
+                                           target_level=text_worker.get_target_group([item['text']],
+                                                                                     described=False),
+                                           target_news=text_worker.get_news_group([item['text']],
+                                                                                  described=False),
                                            text=item['text'])
         else:
             logging.info('New last_id (VK) in public {} is {!s}'.format(public, item['id']))
@@ -256,8 +292,10 @@ def send_new_posts_from_web(items, sourse_site):
 
             bot.send_message(CHANNEL_NAME, text)
             text_worker.write_text_to_json(key,
-                                           target_level=target_group,
-                                           target_news=target_news,
+                                           target_level=text_worker.get_target_group([body]
+                                                                                     described=False),
+                                           target_news=text_worker.get_news_group([body],
+                                                                                  described=False),
                                            text=body)
         else:
             logging.info('New last_id (website) in public {!s} is {!s}'.format(sourse_site, key))
@@ -285,11 +323,16 @@ def check_new_posts_vk():
         logging.info('[VK] Finished scanning {}'.format(pub))
 
 
+content_extractors = {'mm_announcements_website':parse_mm_notifications_page}
 def check_new_posts_web():
+    """
+    checks for new posts from websites in `WEBSITES`
+    requires content parser, that takes BeautifulSoup object
+    """
     for sourse_site in WEBSITES:
         try:
             logging.info('[WEBSITE] Started scanning {} for news'.format(sourse_site))
-            news = get_data_web(LINKS[sourse_site])
+            news = get_data_web(LINKS[sourse_site], content_extractors[sourse_site])
             if news:
                 send_new_posts_from_web(news, sourse_site)
         except Exception as ex:
