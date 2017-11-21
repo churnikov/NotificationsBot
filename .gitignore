@@ -152,3 +152,4 @@ credentials.*
 *.out
 *.toc
 *.bbl
+config.py
