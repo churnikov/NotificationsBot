@@ -29,3 +29,4 @@ If you don't want to get notifications from our [public group](https://vk.com/ma
 - Add "do not disturb" from 24 till 6 o'clock
 - Don't notify over mmspbu and some irrelevant classes of news. (**Done**)
 - Make better formatted text with markdown
+- Need smarter way to find #hashtags
