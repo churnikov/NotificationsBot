@@ -1,3 +1,4 @@
+import re
 import time
 import logging
 import json
@@ -244,11 +245,8 @@ def get_data_web(website, content_extractor, limit=5):
 
 def get_hashtag_from_mmspbu(string):
     """return hashtags from mmspbu, if there are any in post"""
-    tags = []
-    for pending_tag in string.split('|')[1:]:
-        if '#' in pending_tag:
-            tag = pending_tag.strip().replace('@', '_')
-            tags.append(tag)
+    pattern = re.compile('#[\w@]+')
+    tags = re.findall(pattern, string)
     return tags
 
 
