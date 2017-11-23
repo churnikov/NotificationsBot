@@ -263,17 +263,22 @@ def send_new_posts_from_vk(items, public):
         if db.add_event((str(item['id']), SOURCES[public])):
             link = '{!s}{!s}'.format(LINKS[public], item['id'])
 
-            if public == 'mmspbu':
-                tags = get_hashtag_from_mmspbu(item['text'])
-                if tags:
-                    tags_string = ' '.join(tags)
-                    link = '{}\n{}'.format(tags_string, link)
-
             target_level=str(text_worker.get_target_group([item['text']],
                                                       described=False)[0])
 
             target_news=str(text_worker.get_news_group([item['text']],
                                                    described=False)[0])
+
+            tags = []
+            if public == 'mmspbu':
+                tags = get_hashtag_from_mmspbu(item['text'])
+            elif public == 'matobes_maga_2017':
+                tags = [text_worker.get_news_describer()[target_news],
+                        text_worker.get_target_describer()[target_level]]
+
+            if tags:
+                tags_string = ' '.join(tags)
+                link = '{}\n{}'.format(tags_string, link)
 
             bot.send_message(CHANNEL_NAME, link, disable_notification=is_news_irrelevant(target_news))
             text_worker.write_text_to_json(str(item['id']) + '_' + str(SOURCES[public]),
