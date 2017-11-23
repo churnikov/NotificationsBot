@@ -252,6 +252,10 @@ def get_hashtag_from_mmspbu(string):
     return tags
 
 
+def is_news_irrelevant(predicted_class, irrelevan_classes=['6', '7', '13']):
+    return predicted_class in irrelevan_classes
+
+
 def send_new_posts_from_vk(items, public):
     db = SQLighter(DATABASE)
     last_id = None
@@ -264,12 +268,17 @@ def send_new_posts_from_vk(items, public):
                 if tags:
                     tags_string = ' '.join(tags)
                     link = '{}\n{}'.format(tags_string, link)
-            bot.send_message(CHANNEL_NAME, link)
+
+            target_level=str(text_worker.get_target_group([item['text']],
+                                                      described=False)[0])
+
+            target_news=str(text_worker.get_news_group([item['text']],
+                                                   described=False)[0])
+
+            bot.send_message(CHANNEL_NAME, link, disable_notification=is_news_irrelevant(target_news))
             text_worker.write_text_to_json(str(item['id']) + '_' + str(SOURCES[public]),
-                                           target_level=text_worker.get_target_group([item['text']],
-                                                                                     described=False)[0],
-                                           target_news=text_worker.get_news_group([item['text']],
-                                                                                  described=False)[0],
+                                           target_level=target_level,
+                                           target_news=target_news,
                                            text=item['text'])
         else:
             logging.info('New last_id (VK) in public {} is {!s}'.format(public, item['id']))
@@ -289,13 +298,13 @@ def send_new_posts_from_web(items, sourse_site):
 
             text = '{} {}\n {}'.format(target_group, target_news, body)
 
-            bot.send_message(CHANNEL_NAME, text)
-            text_worker.write_text_to_json(key,
-                                           target_level=text_worker.get_target_group([body],
-                                                                                     described=False)[0],
-                                           target_news=text_worker.get_news_group([body],
-                                                                                  described=False)[0],
-                                           text=[body])
+            target_level=str(text_worker.get_target_group([body], described=False)[0])
+            target_news=str(text_worker.get_news_group([body], described=False)[0])
+
+            bot.send_message(CHANNEL_NAME, text,
+                             disable_notification=is_news_irrelevant(target_news))
+            text_worker.write_text_to_json(key, target_level=target_level,
+                                           target_news=target_news, text=[body])
         else:
             logging.info('New last_id (website) in public {!s} is {!s}'.format(sourse_site, key))
             break
