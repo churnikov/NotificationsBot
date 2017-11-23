@@ -246,7 +246,7 @@ def get_data_web(website, content_extractor, limit=5):
 def get_hashtag_from_mmspbu(string):
     """return hashtags from mmspbu, if there are any in post"""
     patern = re.compile('#[\w@]+')
-    tags = map(lambda x: x.replace('@', '_'), re.findall(patern, s)))
+    tags = map(lambda x: x.replace('@', '_'), re.findall(patern, s))
     return tags
 
 
