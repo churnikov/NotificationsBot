@@ -27,6 +27,6 @@ If you don't want to get notifications from our [public group](https://vk.com/ma
   - Add named entity recognition
 - Move to server (mb [here](https://wiki.python.org/moin/FreeHosts))
 - Add "do not disturb" from 24 till 6 o'clock
-- Don't notify over mmspbu and some irrelevant classes of news. (**Done**)
+- Don't notify over mmspbu and some irrelevant classes of news. (**DONE**)
 - Make better formatted text with markdown
-- Need smarter way to find #hashtags
+- Need smarter way to find #hashtags (**DONE**)

@@ -246,10 +246,11 @@ def get_data_web(website, content_extractor, limit=5):
 def get_hashtag_from_mmspbu(string):
     """return hashtags from mmspbu, if there are any in post"""
     patern = re.compile('#[\w@]+')
-    tags = map(lambda x: x.replace('@', '_'), re.findall(patern, s))
+    tags = map(lambda x: x.replace('@', '\_'), re.findall(patern, string))
     return tags
 
 
+# TODO: update this method, so that it doesn't send notifications not only for certain news.
 def is_news_irrelevant(predicted_class, irrelevan_classes=['6', '7', '13']):
     return predicted_class in irrelevan_classes
 
@@ -276,9 +277,10 @@ def send_new_posts_from_vk(items, public):
                         text_worker.get_target_describer()[target_level]]
 
             tags_string = ' '.join(tags)
-            text = '{}\n{}'.format(tags_string, link)
+            text = "{}\n[Оригинал]({})".format(tags_string, link)
 
-            bot.send_message(CHANNEL_NAME, text, disable_notification=is_news_irrelevant(target_news))
+            bot.send_message(CHANNEL_NAME, text, disable_notification=is_news_irrelevant(target_news),
+                             parse_mode='Markdown')
             text_worker.write_text_to_json(str(item['id']) + '_' + str(SOURCES[public]),
                                            target_level=target_level,
                                            target_news=target_news,
@@ -367,4 +369,5 @@ if __name__ == '__main__':
             time.sleep(60 * 10)
     else:
         check_new_posts_vk()
+        check_new_posts_web()
     logging.info('[App] Script exited.\n')
