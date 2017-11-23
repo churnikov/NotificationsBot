@@ -245,8 +245,8 @@ def get_data_web(website, content_extractor, limit=5):
 
 def get_hashtag_from_mmspbu(string):
     """return hashtags from mmspbu, if there are any in post"""
-    pattern = re.compile('#[\w@]+')
-    tags = re.findall(pattern, string)
+    patern = re.compile('#[\w@]+')
+    tags = map(lambda x: x.replace('@', '_'), re.findall(patern, s)))
     return tags
 
 
@@ -270,15 +270,15 @@ def send_new_posts_from_vk(items, public):
             tags = []
             if public == 'mmspbu':
                 tags = get_hashtag_from_mmspbu(item['text'])
-            elif public == 'matobes_maga_2017':
+
+            if not tags:
                 tags = [text_worker.get_news_describer()[target_news],
                         text_worker.get_target_describer()[target_level]]
 
-            if tags:
-                tags_string = ' '.join(tags)
-                link = '{}\n{}'.format(tags_string, link)
+            tags_string = ' '.join(tags)
+            text = '{}\n{}'.format(tags_string, link)
 
-            bot.send_message(CHANNEL_NAME, link, disable_notification=is_news_irrelevant(target_news))
+            bot.send_message(CHANNEL_NAME, text, disable_notification=is_news_irrelevant(target_news))
             text_worker.write_text_to_json(str(item['id']) + '_' + str(SOURCES[public]),
                                            target_level=target_level,
                                            target_news=target_news,
