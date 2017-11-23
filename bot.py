@@ -279,7 +279,7 @@ def send_new_posts_from_vk(items, public):
             text_worker.write_text_to_json(str(item['id']) + '_' + str(SOURCES[public]),
                                            target_level=target_level,
                                            target_news=target_news,
-                                           text=item['text'])
+                                           text=[item['text']])
         else:
             logging.info('New last_id (VK) in public {} is {!s}'.format(public, item['id']))
             break
