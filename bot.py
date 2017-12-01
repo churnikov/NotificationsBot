@@ -143,6 +143,7 @@ text_worker = text_worker(json_name='new_data.json',
                           description_target_file='target_groups_described.json')
 
 
+get_all_posts_domains = ['matobes_maga_2017', 'mmspbu']
 def get_vk_url(domain, token, count=5):
     """
     generates vk api request.
@@ -151,7 +152,12 @@ def get_vk_url(domain, token, count=5):
 
     :return: -- (str) -- url with request.
     """
-    return 'https://api.vk.com/method/wall.get?domain={}&count={}&filter=owner&access_token={}'.format(domain,
+    if domain in get_all_posts_domains:
+        filtr = 'all'
+    else:
+        filtr='owner'
+    return 'https://api.vk.com/method/wall.get?domain={}&count={}&filter={}&access_token={}'.format(domain,
+                                                                                                filtr,
                                                                                                 count,
                                                                                                 token)
 
