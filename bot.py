@@ -286,7 +286,7 @@ def send_new_posts_from_vk(items, public):
 
             tags = map(lambda x: x.replace('_', '\_'), tags)
             tags_string = ' '.join(tags)
-            text = "{}\n[Оригинал]({})".format(tags_string, link)
+            text = "#{}\n{}\n[Оригинал]({})".format(public, tags_string, link)
 
             bot.send_message(CHANNEL_NAME, text, disable_notification=is_news_irrelevant(target_news),
                              parse_mode='Markdown')
@@ -310,7 +310,7 @@ def send_new_posts_from_web(items, sourse_site):
             target_group = items['target_level'][key]
             target_news = items['target_news'][key]
 
-            text = '{} {}\n {}'.format(target_group, target_news, body)
+            text = '#{}\n{} {}\n{}'.format(sourse_site, target_group, target_news, body)
 
             target_level=str(text_worker.get_target_group([body], described=False)[0])
             target_news=str(text_worker.get_news_group([body], described=False)[0])
