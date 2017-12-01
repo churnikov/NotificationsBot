@@ -157,8 +157,8 @@ def get_vk_url(domain, token, count=5):
     else:
         filtr='owner'
     return 'https://api.vk.com/method/wall.get?domain={}&count={}&filter={}&access_token={}'.format(domain,
-                                                                                                filtr,
                                                                                                 count,
+                                                                                                filtr,
                                                                                                 token)
 
 
