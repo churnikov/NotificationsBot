@@ -205,7 +205,8 @@ def parse_mm_notifications_page(soup, limit):
             break
         news.append(hr.text)
 #   Saving data
-    key = get_string_hash('\n'.join(news))
+    key = get_string_hash(''.join(map(lambda x: ''.join(x.lower().strip().split()),
+                                      news)))
     content['text'][key] = news
     content['target_level'][key] = text_worker.get_target_group(['\n'.join(news)])
     content['target_news'][key] = text_worker.get_news_group(['\n'.join(news)])
@@ -218,7 +219,8 @@ def parse_mm_notifications_page(soup, limit):
                 break
             news.append(item.text)
 #       Saving data
-        key = get_string_hash('\n'.join(news))
+        key = get_string_hash(''.join(map(lambda x: ''.join(x.lower().strip().split()),
+                                          news)))
         content['text'][key] = news
         content['target_level'][key] = text_worker.get_target_group(['\n'.join(news)])
         content['target_news'][key] = text_worker.get_news_group(['\n'.join(news)])
@@ -337,7 +339,7 @@ def check_new_posts_vk():
         logging.info('[VK] Finished scanning {}'.format(pub))
 
 
-content_extractors = {'mm_announcements_website':parse_mm_notifications_page}
+CONTENT_EXTRACTORS = {'mm_announcements_website':parse_mm_notifications_page}
 def check_new_posts_web():
     """
     checks for new posts from websites in `WEBSITES`
@@ -346,7 +348,7 @@ def check_new_posts_web():
     for sourse_site in WEBSITES:
         try:
             logging.info('[WEBSITE] Started scanning {} for news'.format(sourse_site))
-            news = get_data_web(LINKS[sourse_site], content_extractors[sourse_site])
+            news = get_data_web(LINKS[sourse_site], CONTENT_EXTRACTORS[sourse_site])
             if news:
                 send_new_posts_from_web(news, sourse_site)
         except Exception as ex:
